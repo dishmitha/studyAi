@@ -30,6 +30,9 @@ public class User {
     @Column(name = "daily_study_hours")
     private Integer dailyStudyHours = 2;
 
+    @Column(name = "stars")
+    private Integer stars = 0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -110,6 +113,14 @@ public class User {
 
     public void setDailyStudyHours(Integer dailyStudyHours) {
         this.dailyStudyHours = dailyStudyHours;
+    }
+
+    public Integer getStars() {
+        return stars;
+    }
+
+    public void setStars(Integer stars) {
+        this.stars = stars;
     }
 
     public LocalDateTime getCreatedAt() {

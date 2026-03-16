@@ -37,6 +37,7 @@ public class DashboardService {
         if (user != null) {
             response.setUserName(user.getName());
             response.setDailyStudyHours(user.getDailyStudyHours());
+            response.setStars(user.getStars() != null ? user.getStars() : 0);
         }
 
         // Get subject stats

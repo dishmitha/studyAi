@@ -35,6 +35,9 @@ public class Task {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
+
     @Column(name = "task_type")
     @Enumerated(EnumType.STRING)
     private TaskType taskType = TaskType.STUDY;
@@ -147,6 +150,14 @@ public class Task {
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public TaskType getTaskType() {

@@ -17,6 +17,7 @@ public class DashboardResponse {
     private List<TaskDto> todayTasks;
     private List<SubjectDto> subjects;
     private List<ReminderDto> upcomingReminders;
+    private Integer stars;
 
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }
@@ -59,6 +60,9 @@ public class DashboardResponse {
 
     public List<ReminderDto> getUpcomingReminders() { return upcomingReminders; }
     public void setUpcomingReminders(List<ReminderDto> upcomingReminders) { this.upcomingReminders = upcomingReminders; }
+    
+    public Integer getStars() { return stars; }
+    public void setStars(Integer stars) { this.stars = stars; }
 
     public static class TaskDto {
         private Long id;

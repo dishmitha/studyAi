@@ -24,15 +24,17 @@ public class TaskService {
     private final SubjectRepository subjectRepository;
     private final TopicRepository topicRepository;
     private final StudyPlanRepository studyPlanRepository;
+    private final HistoryService historyService;
 
     public TaskService(TaskRepository taskRepository, UserRepository userRepository,
                        SubjectRepository subjectRepository, TopicRepository topicRepository,
-                       StudyPlanRepository studyPlanRepository) {
+                       StudyPlanRepository studyPlanRepository, HistoryService historyService) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.subjectRepository = subjectRepository;
         this.topicRepository = topicRepository;
         this.studyPlanRepository = studyPlanRepository;
+        this.historyService = historyService;
     }
 
     public Task createTask(Task task, Long userId) {
@@ -55,7 +57,15 @@ public class TaskService {
                 studyPlan.ifPresent(task::setStudyPlan);
             }
 
-            return taskRepository.save(task);
+            Task saved = taskRepository.save(task);
+            
+            // Add history for task creation
+            String subjectName = saved.getSubject() != null ? saved.getSubject().getName() : "General";
+            historyService.addTaskHistory(user.get(), saved.getId(), saved.getTitle(),
+                HistoryService.ACTION_CREATED,
+                "Created new task: " + saved.getTitle() + " for subject: " + subjectName);
+            
+            return saved;
         }
         return null;
     }
@@ -88,11 +98,19 @@ public class TaskService {
         Optional<Task> existingTask = taskRepository.findById(id);
         if (existingTask.isPresent()) {
             Task updatedTask = existingTask.get();
+            User user = updatedTask.getUser();
+            boolean wasCompleted = updatedTask.getIsCompleted();
 
             // Handle completion status
-            if (task.getIsCompleted() != null && !updatedTask.getIsCompleted() && task.getIsCompleted()) {
+            if (task.getIsCompleted() != null && !wasCompleted && task.getIsCompleted()) {
                 updatedTask.setIsCompleted(true);
                 updatedTask.setCompletedAt(LocalDateTime.now());
+                
+                // Add star to user when completing task
+                Integer currentStars = user.getStars();
+                if (currentStars == null) currentStars = 0;
+                user.setStars(currentStars + 1);
+                userRepository.save(user);
                 
                 // Mark topic as completed if linked
                 if (updatedTask.getTopic() != null) {
@@ -102,6 +120,12 @@ public class TaskService {
                     topic.setCompletedHours(topic.getEstimatedHours());
                     topicRepository.save(topic);
                 }
+                
+                // Add history for task completion
+                String subjectName = updatedTask.getSubject() != null ? updatedTask.getSubject().getName() : "General";
+                historyService.addTaskHistory(user, updatedTask.getId(), updatedTask.getTitle(),
+                    HistoryService.ACTION_COMPLETED,
+                    "Completed task: " + updatedTask.getTitle() + " for subject: " + subjectName + " (+1 star)");
             }
 
             if (task.getTitle() != null) {
@@ -125,6 +149,9 @@ public class TaskService {
             if (task.getTaskType() != null) {
                 updatedTask.setTaskType(task.getTaskType());
             }
+            if (task.getSummary() != null) {
+                updatedTask.setSummary(task.getSummary());
+            }
 
             return taskRepository.save(updatedTask);
         }
@@ -132,7 +159,18 @@ public class TaskService {
     }
 
     public void deleteTask(Long id) {
-        taskRepository.deleteById(id);
+        Optional<Task> task = taskRepository.findById(id);
+        if (task.isPresent()) {
+            User user = task.get().getUser();
+            String taskTitle = task.get().getTitle();
+            
+            taskRepository.deleteById(id);
+            
+            // Add history for task deletion
+            historyService.addTaskHistory(user, id, taskTitle,
+                HistoryService.ACTION_DELETED,
+                "Deleted task: " + taskTitle);
+        }
     }
 
     public List<Task> rescheduleMissedTasks(Long userId) {
@@ -142,7 +180,25 @@ public class TaskService {
         for (Task task : missedTasks) {
             task.setTaskDate(newDate);
             taskRepository.save(task);
+            
+            // Add history for task reschedule
+            historyService.addTaskHistory(task.getUser(), task.getId(), task.getTitle(),
+                HistoryService.ACTION_UPDATED,
+                "Rescheduled missed task: " + task.getTitle() + " to " + newDate);
         }
         return missedTasks;
+    }
+    
+    public void addStarToUser(Long userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            Integer currentStars = user.getStars();
+            if (currentStars == null) {
+                currentStars = 0;
+            }
+            user.setStars(currentStars + 1);
+            userRepository.save(user);
+        }
     }
 }

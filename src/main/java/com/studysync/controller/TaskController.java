@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -139,7 +140,7 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
-@PutMapping("/{id}/complete")
+    @PutMapping("/{id}/complete")
     public ResponseEntity<Task> markTaskComplete(@PathVariable Long id) {
         Task task = new Task();
         task.setIsCompleted(true);
@@ -154,6 +155,32 @@ public class TaskController {
         task.setIsCompleted(false);
         
         Task updated = taskService.updateTask(id, task);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/complete-with-summary")
+    public ResponseEntity<Task> completeTaskWithSummary(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        String summary = request.get("summary");
+        
+        var existingTaskOpt = taskService.getTaskById(id);
+        if (existingTaskOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Task existingTask = existingTaskOpt.get();
+        
+        // Update task with summary and mark as completed
+        Task task = new Task();
+        task.setIsCompleted(true);
+        task.setSummary(summary);
+        
+        Task updated = taskService.updateTask(id, task);
+        
+        // Add star to user
+        if (updated != null && existingTask.getUser() != null) {
+            taskService.addStarToUser(existingTask.getUser().getId());
+        }
+        
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 

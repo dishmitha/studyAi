@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: studysync
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerCommand: java -jar app.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:mysql://<your-mysql-host>:3306/studysync
+      - key: SPRING_DATASOURCE_USERNAME
+        value: <your-db-username>
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: <your-db-password>
+      - key: JWT_SECRET
+        value: <your-jwt-secret-key>
+      - key: JWT_FILTER_ENABLED
+        value: "false"
+    autoDeploy: true

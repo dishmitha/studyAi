@@ -16,11 +16,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final HistoryService historyService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, HistoryService historyService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
+        this.historyService = historyService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -36,6 +38,10 @@ public class AuthService {
         user.setDailyStudyHours(request.getDailyStudyHours() != null ? request.getDailyStudyHours() : 2);
 
         user = userRepository.save(user);
+
+        // Add history for registration
+        historyService.addAccountHistory(user, HistoryService.ACTION_REGISTERED, 
+            "User registered with email: " + user.getEmail());
 
         String token = jwtUtils.generateToken(user.getEmail(), user.getId(), user.getName());
         return new AuthResponse(token, user.getId(), user.getName(), user.getEmail());
@@ -53,6 +59,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
+
+        // Add history for login
+        historyService.addAccountHistory(user, HistoryService.ACTION_LOGIN, 
+            "User logged in successfully");
 
         String token = jwtUtils.generateToken(user.getEmail(), user.getId(), user.getName());
         return new AuthResponse(token, user.getId(), user.getName(), user.getEmail());

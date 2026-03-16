@@ -13,17 +13,26 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
+    private final HistoryService historyService;
 
-    public SubjectService(SubjectRepository subjectRepository, UserRepository userRepository) {
+    public SubjectService(SubjectRepository subjectRepository, UserRepository userRepository, HistoryService historyService) {
         this.subjectRepository = subjectRepository;
         this.userRepository = userRepository;
+        this.historyService = historyService;
     }
 
     public Subject createSubject(Subject subject, Long userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             subject.setUser(user.get());
-            return subjectRepository.save(subject);
+            Subject saved = subjectRepository.save(subject);
+            
+            // Add history for subject creation
+            historyService.addSubjectHistory(user.get(), saved.getId(), saved.getName(), 
+                HistoryService.ACTION_CREATED, 
+                "Created new subject: " + saved.getName());
+            
+            return saved;
         }
         return null;
     }
@@ -52,6 +61,8 @@ public class SubjectService {
         Optional<Subject> existingSubject = subjectRepository.findById(id);
         if (existingSubject.isPresent()) {
             Subject updatedSubject = existingSubject.get();
+            User user = updatedSubject.getUser();
+            
             if (subject.getName() != null) {
                 updatedSubject.setName(subject.getName());
             }
@@ -62,6 +73,13 @@ public class SubjectService {
                 updatedSubject.setTotalTopics(subject.getTotalTopics());
             }
             if (subject.getCompletedTopics() != null) {
+                // Track when topics are completed
+                if (subject.getCompletedTopics() > updatedSubject.getCompletedTopics()) {
+                    historyService.addSubjectHistory(user, updatedSubject.getId(), updatedSubject.getName(),
+                        HistoryService.ACTION_COMPLETED,
+                        "Completed " + (subject.getCompletedTopics() - updatedSubject.getCompletedTopics()) 
+                        + " topics in " + updatedSubject.getName());
+                }
                 updatedSubject.setCompletedTopics(subject.getCompletedTopics());
             }
             if (subject.getExamDate() != null) {
@@ -70,12 +88,31 @@ public class SubjectService {
             if (subject.getPriority() != null) {
                 updatedSubject.setPriority(subject.getPriority());
             }
-            return subjectRepository.save(updatedSubject);
+            
+            Subject saved = subjectRepository.save(updatedSubject);
+            
+            // Add history for subject update
+            historyService.addSubjectHistory(user, saved.getId(), saved.getName(),
+                HistoryService.ACTION_UPDATED,
+                "Updated subject: " + saved.getName());
+            
+            return saved;
         }
         return null;
     }
 
     public void deleteSubject(Long id) {
-        subjectRepository.deleteById(id);
+        Optional<Subject> subject = subjectRepository.findById(id);
+        if (subject.isPresent()) {
+            User user = subject.get().getUser();
+            String subjectName = subject.get().getName();
+            
+            subjectRepository.deleteById(id);
+            
+            // Add history for subject deletion
+            historyService.addSubjectHistory(user, id, subjectName,
+                HistoryService.ACTION_DELETED,
+                "Deleted subject: " + subjectName);
+        }
     }
 }
