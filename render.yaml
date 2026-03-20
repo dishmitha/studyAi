@@ -6,13 +6,14 @@ services:
     dockerCommand: java -jar app.jar
     envVars:
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:mysql://<your-mysql-host>:3306/studysync
+        value: jdbc:postgresql://your-render-pg-host:5432/studysync # From Render PostgreSQL Internal DB URL
       - key: SPRING_DATASOURCE_USERNAME
-        value: <your-db-username>
+        value: your-render-pg-user
       - key: SPRING_DATASOURCE_PASSWORD
-        value: <your-db-password>
+        value: your-render-pg-password
       - key: JWT_SECRET
-        value: <your-jwt-secret-key>
+        value: your-very-secure-64-char-secret-key-change-this
       - key: JWT_FILTER_ENABLED
-        value: "false"
+        value: "true" # Enable for prod
     autoDeploy: true
+    # After Render deploy: Create PostgreSQL instance, copy Internal URL/User/Pass to these vars. H2 fallback disabled in prod.

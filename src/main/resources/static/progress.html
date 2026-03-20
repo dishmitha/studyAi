@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress - StudySync AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); min-height: 100vh; padding: 20px; color: #f8fafc; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .top-nav { background: white; border-radius: 20px; padding: 15px 30px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-link { color: #667eea; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 8px; transition: background 0.3s; }
+        .nav-link:hover { background: #f0f8ff; }
+        .nav-active { background: #667eea; color: white; }
+        .logout-btn { background: #dc3545; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .header { background: white; border-radius: 20px; padding: 20px 30px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header h1 { color: #667eea; margin: 0; font-size: 28px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 10px; font-weight: 500; }
+        .stat-card .value { font-size: 36px; font-weight: bold; color: #667eea; }
+        .timer-history h3 { color: #333; margin: 20px 0 15px 0; }
+        .timer-session { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .empty-state { text-align: center; padding: 60px; color: #666; }
+        .btn { padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; justify-content: center; align-items: center; }
+        /* Add other styles from index.html as needed */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Nav from my-subjects.html -->
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">🏠 Dashboard</a>
+            <div class="nav-links">
+                <a href="todays-tasks.html" class="nav-link">📋 Tasks</a>
+                <a href="my-subjects.html" class="nav-link">📚 Subjects</a>
+                <a href="progress.html" class="nav-link nav-active">📈 Progress</a>
+                <a href="history.html" class="nav-link">📜 History</a>
+            </div>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <span id="welcomeMessage">Welcome!</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Auth -->
+        <div id="authSection">
+            <div style="background: rgba(255,255,255,0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); padding: 40px; max-width: 500px; margin: 50px auto;">
+                <h1 style="text-align: center; color: #333;">📈 Progress</h1>
+                <p style="text-align: center; color: #666;">Login to view study progress</p>
+                <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="email"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="password"></div>
+                <button class="btn" onclick="login()" style="width:100%">Login</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div id="mainContent" style="display:none;">
+            <div class="header">
+                <h1>📈 Study Progress Overview</h1>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="empty-state">Loading...</div>
+            </div>
+            <div class="section">
+                <h3 class="timer-history">⏱️ Recent Study Sessions</h3>
+                <div id="timerHistory">Loading...</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_URL = '/api'; // Live adjust
+        let token = localStorage.getItem('token');
+
+        // Similar login/load logic as my-subjects.html
+        async function loadProgress() {
+            const response = await fetch(`${API_URL}/dashboard`, { headers: {'Authorization': `Bearer ${token}`} });
+            const data = await response.json();
+            // Populate stats
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card"><h3>Hours Studied</h3><div class="value">${data.totalHours || 0}h</div></div>
+                <div class="stat-card"><h3>Streak</h3><div class="value">${data.currentStreak || 0} days</div></div>
+                <div class="stat-card"><h3>Subjects Complete</h3><div class="value">${data.completedSubjects || 0}</div></div>
+                <div class="stat-card"><h3>Stars</h3><div class="value">${data.stars || 0}</div></div>
+            `;
+        }
+        // Timer history load from /api/history/type/STUDY_SESSION etc.
+        // Login, logout functions similar to my-subjects
+        // Init if token
+    </script>
+</body>
+</html>
